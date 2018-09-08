@@ -1,15 +1,17 @@
 import React from 'react';
 import {
 	View,
-	PanResponder,
-
+  Image,
 } from 'react-native';
 import Device from 'utils/Device';
+import px from 'utils/PixelSizeFixer';
 import Matter from 'matter-js';
 import {
   Body,
 } from 'react-game-kit/native';
 import BodyComponent from 'objects/proto/BodyComponent'
+
+const BALL_SIZE = px(40);
 
 export default class Ball extends BodyComponent {
 
@@ -36,49 +38,11 @@ export default class Ball extends BodyComponent {
     };
 	}
 	componentWillMount() {
-    this._panResponder = PanResponder.create({
-      onStartShouldSetPanResponder: (evt, gestureState) => true,
-      onStartShouldSetPanResponderCapture: (evt, gestureState) => true,
-      onMoveShouldSetPanResponder: (evt, gestureState) => true,
-      onMoveShouldSetPanResponderCapture: (evt, gestureState) => true,
-      onPanResponderGrant: (evt, gestureState) => {
-        this.setState({
-          //gravity: 0,
-        });
-
-        Matter.Body.setAngularVelocity(this.body.body, 0);
-        Matter.Body.setVelocity(this.body.body, {x: 0, y: 0});
-
-        this.startPosition = {
-          x: this.body.body.position.x,
-          y: this.body.body.position.y,
-        }
-      },
-      onPanResponderMove: (evt, gestureState) => {
-        Matter.Body.setPosition(this.body.body, {
-          x: this.startPosition.x + gestureState.dx,
-          y: this.startPosition.y + gestureState.dy,
-        });
-      },
-      onPanResponderRelease: (evt, gestureState) => {
-        this.setState({
-          //gravity: 1,
-        });
-
-        Matter.Body.applyForce(this.body.body, {
-          x: this.body.body.position.x,
-          y: this.body.body.position.y,
-        }, {
-          x: gestureState.vx,
-          y: gestureState.vy,
-        });
-      },
-    });
   }
 	getBallStyles() {
 	    return {
-	      height: 75,
-	      width: 75,
+	      height: BALL_SIZE*2,
+	      width: BALL_SIZE*2,
 	      position: 'absolute',
 	      transform: [
 	        { translateX: this.state.ballPosition.x },
@@ -91,25 +55,22 @@ export default class Ball extends BodyComponent {
 		return (
 			<Body
               shape="circle"
-              args={[100, Device.height - 275, 75]}
+              args={[Device.width / 2, 0, BALL_SIZE]}
               density={0.003}
-              friction={1}
-              frictionStatic={0}
+              friction={2}
+              frictionStatic={1}
               restitution={0.5}
               ref={(b) => { if (b) this.body = b; }}
             >
              
               <View
-                style={this.getBallStyles()} {...this._panResponder.panHandlers}
+                style={this.getBallStyles()}
               >
-                <View style={{backgroundColor: '#009900', height: 75, width: 75}} />
-              {/*
+                
                 <Image
-                  source={require('./assets/basketball.png')}
-                  height={75}
-                  width = {75}
+                  source={require('images/ball.png')}
+                  style={{width: BALL_SIZE*2.04, height: BALL_SIZE*2.04}}
                 />
-              */}
               </View>
               
             </Body>
