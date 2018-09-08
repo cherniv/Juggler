@@ -2,6 +2,7 @@ import React from 'react';
 import {
 	View,
   Image,
+  StyleSheet,
 } from 'react-native';
 import Device from 'utils/Device';
 import px from 'utils/PixelSizeFixer';
@@ -41,9 +42,7 @@ export default class Ball extends BodyComponent {
   }
 	getBallStyles() {
 	    return {
-	      height: BALL_SIZE*2,
-	      width: BALL_SIZE*2,
-	      position: 'absolute',
+	      
 	      transform: [
 	        { translateX: this.state.ballPosition.x },
 	        { translateY: this.state.ballPosition.y },
@@ -63,18 +62,21 @@ export default class Ball extends BodyComponent {
               ref={(b) => { if (b) this.body = b; }}
             >
              
-              <View
-                style={this.getBallStyles()}
-              >
-                
                 <Image
                   source={require('images/ball.png')}
-                  style={{width: BALL_SIZE*2.04, height: BALL_SIZE*2.04}}
+                  style={[styles.ball, this.getBallStyles()]}
                 />
-              </View>
+      
               
             </Body>
 		)
 	}
-
 }
+
+var styles = StyleSheet.create({
+  ball: {
+    position: 'absolute',
+    width: BALL_SIZE*2.04, 
+    height: BALL_SIZE*2.04,
+  }
+})
