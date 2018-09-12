@@ -12,7 +12,7 @@ import {
 } from 'react-game-kit/native';
 import BodyComponent from 'objects/proto/BodyComponent'
 
-const BALL_SIZE = px(40);
+const BALL_SIZE = (50);
 
 export default class Ball extends BodyComponent {
 
@@ -35,7 +35,7 @@ export default class Ball extends BodyComponent {
         x: 0,
         y: 0,
       },
-      ballAngle: 45,
+      ballAngle: 0,
     };
 	}
 	componentWillMount() {
@@ -44,22 +44,30 @@ export default class Ball extends BodyComponent {
 	    return {
 	      
 	      transform: [
-	        { translateX: this.state.ballPosition.x },
-	        { translateY: this.state.ballPosition.y },
+	        { translateX: this.state.ballPosition.x - BALL_SIZE/2 },
+	        { translateY: this.state.ballPosition.y -BALL_SIZE/2  },
 	        { rotate: (this.state.ballAngle * (180 / Math.PI)) + 'deg'}
 	      ],
 	    };
 	  }
 	render() {
+    //console.log('>>>', this.context.scale)
 		return (
 			<Body
+        isStatic={!true}
+        label='BALL'
               shape="circle"
-              args={[Device.width / 2, 0, BALL_SIZE]}
-              density={0.003}
-              friction={2}
-              frictionStatic={1}
-              restitution={0.5}
-              ref={(b) => { if (b) this.body = b; }}
+              args={[Device.width / 4, 0, BALL_SIZE/2]}
+              density={0.5}
+              friction={0}
+              frictionStatic={0}
+              restitution={0}
+              ref={(b) => { 
+                if (!b) return;  
+                this.body = b; 
+                //console.log('AAA', b)  
+              }}
+
             >
              
                 <Image
@@ -76,7 +84,7 @@ export default class Ball extends BodyComponent {
 var styles = StyleSheet.create({
   ball: {
     position: 'absolute',
-    width: BALL_SIZE*2.04, 
-    height: BALL_SIZE*2.04,
+    width: BALL_SIZE, 
+    height: BALL_SIZE,
   }
 })

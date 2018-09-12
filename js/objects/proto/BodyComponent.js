@@ -4,6 +4,7 @@ import React from 'react';
 export default class BodyComponent extends React.Component{
 	static contextTypes = {
     	loop: PropTypes.object,
+    	scale: PropTypes.number
   	};
 
 	componentDidMount() {
