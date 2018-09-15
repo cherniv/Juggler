@@ -4,8 +4,8 @@ function randomColor () {
 }
 
 var h = 4;
-var w = 10;
-var cols = 80;
+var w = 800;
+var cols = 1;
 var rows = 200;
 
 document.querySelector('canvas') && document.querySelector('canvas').remove()
@@ -20,7 +20,6 @@ for (var y=0; y<rows; y++) {
 	for (var x=0; x<cols; x++) {
 		ctx.fillStyle=randomColor();
 		ctx.fillRect(x * w, y * h, w, h);
-		i++
 	}
 }
 

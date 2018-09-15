@@ -40,12 +40,20 @@ export default class Ball extends BodyComponent {
 	}
 	componentWillMount() {
   }
+  getContainerStyles() {
+      return {
+        
+        transform: [
+          { translateX: this.state.ballPosition.x - BALL_SIZE/2 },
+          { translateY: this.state.ballPosition.y -BALL_SIZE/2  },
+          
+        ],
+      };
+    }
 	getBallStyles() {
 	    return {
 	      
 	      transform: [
-	        { translateX: this.state.ballPosition.x - BALL_SIZE/2 },
-	        { translateY: this.state.ballPosition.y -BALL_SIZE/2  },
 	        { rotate: (this.state.ballAngle * (180 / Math.PI)) + 'deg'}
 	      ],
 	    };
@@ -56,35 +64,53 @@ export default class Ball extends BodyComponent {
 			<Body
         isStatic={!true}
         label='BALL'
-              shape="circle"
-              args={[Device.width / 4, 0, BALL_SIZE/2]}
-              density={0.5}
-              friction={0}
-              frictionStatic={0}
-              restitution={0}
-              ref={(b) => { 
-                if (!b) return;  
-                this.body = b; 
-                //console.log('AAA', b)  
-              }}
+        shape="circle"
+        args={[Device.width / 4, 0, BALL_SIZE/2,]}
+        density={0.5}
+        friction={0}
+        frictionStatic={0}
+        restitution={0.4}
+        //collisionFilter={{
+                   //category: 0x0002,
+        //           mask: 0xFFFFFFFF,
+                                        //group: 2
+        //        }}
+        ref={(b) => { 
+          if (!b) return;  
+          this.body = b; 
+          //console.log('AAA', b)  
+        }}
 
-            >
-             
-                <Image
-                  source={require('images/ball.png')}
-                  style={[styles.ball, this.getBallStyles()]}
-                />
-      
-              
-            </Body>
+      >
+        <View style={[styles.container, this.getContainerStyles() ]}>
+          <Image
+            source={require('images/ball.png')}
+            style={[styles.ball, this.getBallStyles()]}
+          />
+        </View>
+      </Body>
 		)
 	}
 }
 
 var styles = StyleSheet.create({
-  ball: {
+  container: {
     position: 'absolute',
     width: BALL_SIZE, 
     height: BALL_SIZE,
+    shadowColor: '#000000',
+    shadowOffset: {
+      width: 6,
+      height: 6,
+    },
+    shadowOpacity: 0.5,
+    shadowRadius: 6,
+    borderRadius: BALL_SIZE / 2
+  },
+  ball: {
+
+    width: BALL_SIZE, 
+    height: BALL_SIZE,
+    
   }
 })

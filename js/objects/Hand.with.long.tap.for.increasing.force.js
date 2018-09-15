@@ -16,8 +16,6 @@ import BodyComponent from 'objects/proto/BodyComponent'
 const HAND_HEIGHT = (20);
 const HAND_WIDTH = (40);
 
-const TOP = Device.height / 100 * 75;
-
 export default class Hand extends BodyComponent {
 
   update = () => {
@@ -28,9 +26,9 @@ export default class Hand extends BodyComponent {
        ballPosition: this.body.body.position,
        //ballAngle: this.body.body.angle,
      });
-  	// if (this.tapTimestampStart) {
-  	// 	this.forceIncrease();
-  	// }
+  	if (this.tapTimestampStart) {
+  		this.forceIncrease();
+  	}
     // tick logic
   };
 
@@ -54,20 +52,26 @@ export default class Hand extends BodyComponent {
   componentWillReceiveProps(props) {
   //	console.log('this.body', this.body.body)
   //	console.log('PROPS', )
-    var {collision} = props;
-    if (!collision) return;
-  	var {pairs} = collision;
+  	var {pairs} = props.collision;
   	var ball;
-  	if (pairs[0] && pairs[0].bodyB == this.body.body) {
+  	if (pairs[0].bodyB == this.body.body) {
   		ball = pairs[0].bodyA;
   	}
-  	if (pairs[0] && pairs[0].bodyA == this.body.body) {
+  	if (pairs[0].bodyA == this.body.body) {
   		ball = pairs[0].bodyB;
   	}
-  	
+  	console.log('BALL ++ THI>BALL1', ball, this.ball);
+  	console.log('BALL ++ THI>BALL2', ball == this.ball);
   	if (ball && this.ball != ball) {
   		this.ball = ball;
-      this.pushBall();
+  		if (this.props.world) {
+  			var constraint = Matter.Constraint.create({bodyA: this.body.body, bodyB: this.ball, stiffness: 0, damping: 1});
+  			Matter.World.addConstraint(this.props.world, constraint);
+  			this.constraint = constraint;
+  			console.log('this.constraint' , this.constraint)
+  			console.log('this.props.world' , this.props.world)
+  		}
+  		
   	}
   }
 
@@ -77,13 +81,21 @@ export default class Hand extends BodyComponent {
   startForceIncrease = () => {
   	this.tapTimestampStart = new Date();
   }
-  
-  pushBall() {
-    console.log('STIFF', this.constraint)
-      
-      Matter.Body.setVelocity(this.ball, {x: this.isLeft ? 3 : -3, y: - (5 + Math.random() * 5) });
-      this.ball = null;
-      // this.constraint = null;
+  stopForceIncrease = () => {
+
+  	if (this.ball) {
+  		console.log('STIFF', this.constraint)
+  		if (this.constraint)
+  			this.props.world && Matter.Composite.remove(this.props.world, this.constraint);
+  		
+  		Matter.Body.setVelocity(this.ball, {x: this.isLeft ? 5 : -5, y: -this.state.currentForce});
+  		this.ball = null;
+  		// this.constraint = null;
+  		console.log('this.state.currentForce', this.state.currentForce)
+  	}
+
+  	this.tapTimestampStart = null;
+  	this.setState({currentForce: 0});
   }
   forceIncrease = () => {
   	var currentForce = this.state.currentForce + 0.2 ;
@@ -99,36 +111,26 @@ export default class Hand extends BodyComponent {
       onMoveShouldSetPanResponderCapture: (evt, gestureState) => true,
       onPanResponderGrant: (evt, gestureState) => {
 
-        Matter.Body.setPosition(this.body.body, {
-          x: gestureState.x0, // this.startPosition.x + gestureState.dx,
-          y: gestureState.y0, // this.startPosition.y + gestureState.dy,
-        });
+        Matter.Body.setAngularVelocity(this.body.body, 0);
+        Matter.Body.setVelocity(this.body.body, {x: 0, y: 0});
+
+        this.startPosition = {
+          x: this.body.body.position.x,
+          y: this.body.body.position.y,
+        }
         
-        //this.startForceIncrease();
+        this.startForceIncrease();
         
       },
       onPanResponderMove: (evt, gestureState) => {
-        console.log( this.isLeft, gestureState.moveX)
-        var newX;
-        if ((this.isLeft && gestureState.moveX > width / 2) || (!this.isLeft && gestureState.moveX < width / 2)) {
-          newX = width / 2;
-        } else {
-          newX = gestureState.moveX;
-        }
-
         Matter.Body.setPosition(this.body.body, {
-          x: newX, // this.startPosition.x + gestureState.dx,
-          y: gestureState.moveY, // this.startPosition.y + gestureState.dy,
+          x: this.startPosition.x + gestureState.dx,
+          y: this.startPosition.y + gestureState.dy,
         });
       },
       onPanResponderRelease: (evt, gestureState) => {
 
-
-         Matter.Body.setPosition(this.body.body, {
-          x: this.calculateInitLeft(), // this.startPosition.x + gestureState.dx,
-          y: TOP, // this.startPosition.y + gestureState.dy,
-        });
-        //this.stopForceIncrease();
+        this.stopForceIncrease();
 
         // Matter.Body.applyForce(this.body.body, {
         //   x: this.body.body.position.x,
@@ -150,44 +152,41 @@ export default class Hand extends BodyComponent {
 	      ],
 	    };
 	  }
-  calculateInitLeft = () => {
-    var left = Device.width / 4;
-    if (!this.isLeft) left += Device.width / 2;
-    return left;
-  }
 	render() {
-		
+		var left = Device.width / 4;
+		if (!this.isLeft) left += Device.width / 2;
 		return (
 
 			<View 
 				style={{width: width/ 2, height: '100%', position: 'absolute', top: 0, left: this.isLeft ?0 : '50%', /*backgroundColor: this.isLeft ? 'rgba(255,255,255,1)' : '#FF00ff' */}}
 				{...this._panResponder.panHandlers}
 			>
-  			<Body
-  				isStatic={true}
-  				label={ (this.isLeft ? 'LEFT' : 'RIGHT' ) + '_HAND'}
-          shape="rectangle"
-          mask="HAND"
-          args={[this.calculateInitLeft(), (TOP), HAND_WIDTH, HAND_HEIGHT ]}
-          density={0.003}
-          friction={0}
-          frictionStatic={0}
-          restitution={0}
-          ref={(b) => { 
-            if (!b) return;  
-            this.body = b; 
-            //console.log('AAA', b)  
-          }}
-          
-        >
-         	<View style={[styles.hand, this.getPositionStyles()]}  >
-            <Image
-              source={require('images/hand.png')}
-              style={styles.image}
-              resizeMode='contain'
-            />
-  				</View>
-        </Body>
+			<Body
+				isStatic={true}
+				label={ (this.isLeft ? 'LEFT' : 'RIGHT' ) + '_HAND'}
+              shape="rectangle"
+              mask="HAND"
+              args={[left, (350), HAND_WIDTH, HAND_HEIGHT ]}
+              density={0.003}
+              friction={0}
+              frictionStatic={0}
+              restitution={0}
+              ref={(b) => { 
+                if (!b) return;  
+                this.body = b; 
+                //console.log('AAA', b)  
+              }}
+
+            >
+             	<View style={[styles.hand, this.getPositionStyles()]}  />
+             	{/*
+                <Image
+                  source={require('images/ball.png')}
+                  style={[styles.ball, this.getPositionStyles()]}
+                />
+      				*/}
+              
+            </Body>
       </View>
 		)
 	}
@@ -198,11 +197,6 @@ var styles = StyleSheet.create({
   	position: 'absolute',
   	top: 0,
   	left: 0,
-    width: HAND_WIDTH, height: HAND_HEIGHT,
-    //  backgroundColor: '#009900',
-  },
-  image: {
-    marginLeft: -10,
-    marginTop: -20,
+    width: HAND_WIDTH, height: HAND_HEIGHT,  backgroundColor: '#009900'
   }
 })

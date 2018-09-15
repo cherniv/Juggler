@@ -23,7 +23,6 @@ export default class Game extends Component {
 
   handleUpdate = () => {
     if (!this.engine || i > 0) return;
-    console.log('Engine', this.engine)
     i ++;
    // var a = Matter.Composite.allComposites(Matter.World)
     //Matter.Composite.allBodies(Matter.World)
@@ -56,14 +55,15 @@ export default class Game extends Component {
 
   componentWillMount() {
    
-   //this.startInterval()
+   this.startInterval()
   }
 
   startInterval() {
     this.inter = setInterval(()=>{
+      if (this.state.balls.length == 1) clearInterval(this.inter)
       //console.log('GO');
       this.addBall();
-    }, 3000)
+    }, 6000)
   }
 
   addBall = () => {
@@ -80,12 +80,16 @@ export default class Game extends Component {
     const dimensions = Device;
     return (
       <ImageBackground 
-        source={require('images/raw/bg.jpg')} 
+        source={require('images/bg-stripes.png')} 
         style={{width: '100%', height: '100%'}} 
         resizeMode='cover' 
         
       >
-
+      <Image 
+        source={require('images/head.png')} 
+        style={{width: '80%', position: 'absolute', height: '50%', top: '25%', left: '10%'}} 
+        resizeMode='contain'  
+      />
       <Loop>
        
        {/*
@@ -106,15 +110,14 @@ export default class Game extends Component {
               this.setState({collision})
             }}
             onUpdate={this.handleUpdate}
-            //gravity={{ x: 0, y: this.state.gravity, scale: 0.001 }}
+            gravity={{ x: 0, y: 0.2, scale: 0.001 }}
           >
-          {
-            this.state.balls
-          }
             <Hand type={0} collision={this.state.collision} world={this.engine && this.engine.world} />
             <Hand type={1} collision={this.state.collision} world={this.engine && this.engine.world} />
+            {
+              this.state.balls
+            }
            
-            
           </World>
        
         {/*
