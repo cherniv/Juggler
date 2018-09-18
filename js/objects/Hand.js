@@ -16,6 +16,8 @@ import BodyComponent from 'objects/proto/BodyComponent'
 const HAND_HEIGHT = (20);
 const HAND_WIDTH = (40);
 
+var halfWidth = width / 2;
+
 const TOP = Device.height / 100 * 75;
 
 export default class Hand extends BodyComponent {
@@ -48,27 +50,57 @@ export default class Hand extends BodyComponent {
     };
 	}
 	componentWillMount() {
-		this.initPanResponder();
   }
+
+  treatCollision = (collision) => {
+    if (!collision) return;
+    var {pairs} = collision;
+    var ball;
+    if (pairs[0] && pairs[0].bodyB == this.body.body) {
+      ball = pairs[0].bodyA;
+    }
+    if (pairs[0] && pairs[0].bodyA == this.body.body) {
+      ball = pairs[0].bodyB;
+    }
+    
+    if (ball && this.ball != ball) {
+      this.ball = ball;
+      this.pushBall();
+    }
+  } 
 
   componentWillReceiveProps(props) {
   //	console.log('this.body', this.body.body)
   //	console.log('PROPS', )
-    var {collision} = props;
-    if (!collision) return;
-  	var {pairs} = collision;
-  	var ball;
-  	if (pairs[0] && pairs[0].bodyB == this.body.body) {
-  		ball = pairs[0].bodyA;
-  	}
-  	if (pairs[0] && pairs[0].bodyA == this.body.body) {
-  		ball = pairs[0].bodyB;
-  	}
-  	
-  	if (ball && this.ball != ball) {
-  		this.ball = ball;
-      this.pushBall();
-  	}
+    var {collision, lastTouchEvents} = props;
+    this.treatCollision(collision);
+    this.treatTouchEvents(lastTouchEvents);
+  }
+
+  treatTouchEvents = (lastTouchEvents) => {
+    if (!lastTouchEvents || !lastTouchEvents.length) return;
+    console.log('lastTouchEvents' , lastTouchEvents);
+    var {foundRelevantTouch} = this;
+    if (this.isLeft ) {
+      if (lastTouchEvents[0].pageX < halfWidth)
+        foundRelevantTouch(lastTouchEvents[0])
+      else if (lastTouchEvents[1] && lastTouchEvents[1].pageX < halfWidth)
+        foundRelevantTouch(lastTouchEvents[1])
+    }
+
+    if (!this.isLeft ) {
+      if (lastTouchEvents[0].pageX >= halfWidth)
+        foundRelevantTouch(lastTouchEvents[0])
+      else if (lastTouchEvents[1] && lastTouchEvents[1].pageX >= halfWidth)
+        foundRelevantTouch(lastTouchEvents[1])
+    }
+  }
+
+  foundRelevantTouch = (touch) => {
+    Matter.Body.setPosition(this.body.body, {
+      x: touch.pageX, // this.startPosition.x + gestureState.dx,
+      y: touch.pageY, // this.startPosition.y + gestureState.dy,
+    });
   }
 
   checkIfTapIsOnMySide = (gestureState) => {
@@ -91,60 +123,12 @@ export default class Hand extends BodyComponent {
   	this.setState({currentForce})
   	//console.log('forceIncrease', currentForce)
   }
-  initPanResponder = () => {
-  	 	this._panResponder = PanResponder.create({
-      onStartShouldSetPanResponder: (evt, gestureState) => true,
-      onStartShouldSetPanResponderCapture: (evt, gestureState) => true,
-      onMoveShouldSetPanResponder: (evt, gestureState) => true,
-      onMoveShouldSetPanResponderCapture: (evt, gestureState) => true,
-      onPanResponderGrant: (evt, gestureState) => {
-
-        Matter.Body.setPosition(this.body.body, {
-          x: gestureState.x0, // this.startPosition.x + gestureState.dx,
-          y: gestureState.y0, // this.startPosition.y + gestureState.dy,
-        });
-        
-        //this.startForceIncrease();
-        
-      },
-      onPanResponderMove: (evt, gestureState) => {
-        console.log( this.isLeft, gestureState.moveX)
-        var newX;
-        if ((this.isLeft && gestureState.moveX > width / 2) || (!this.isLeft && gestureState.moveX < width / 2)) {
-          newX = width / 2;
-        } else {
-          newX = gestureState.moveX;
-        }
-
-        Matter.Body.setPosition(this.body.body, {
-          x: newX, // this.startPosition.x + gestureState.dx,
-          y: gestureState.moveY, // this.startPosition.y + gestureState.dy,
-        });
-      },
-      onPanResponderRelease: (evt, gestureState) => {
-
-
-         Matter.Body.setPosition(this.body.body, {
-          x: this.calculateInitLeft(), // this.startPosition.x + gestureState.dx,
-          y: TOP, // this.startPosition.y + gestureState.dy,
-        });
-        //this.stopForceIncrease();
-
-        // Matter.Body.applyForce(this.body.body, {
-        //   x: this.body.body.position.x,
-        //   y: this.body.body.position.y,
-        // }, {
-        //   x: gestureState.vx,
-        //   y: gestureState.vy,
-        // });
-      },
-    });
-  }
+  
 	getPositionStyles() {
 	    return {
 	      
 	      transform: [
-	        { translateX: (!this.isLeft ? -width/2 : 0) + this.state.ballPosition.x - HAND_WIDTH/2 },
+	        { translateX:  this.state.ballPosition.x - HAND_WIDTH/2 },
 	        { translateY: this.state.ballPosition.y - HAND_HEIGHT/2 + (this.state.currentForce/10) },
 	        //{ rotate: (this.state.ballAngle * (180 / Math.PI)) + 'deg'}
 	      ],
@@ -156,39 +140,31 @@ export default class Hand extends BodyComponent {
     return left;
   }
 	render() {
-		
 		return (
-
-			<View 
-				style={{width: width/ 2, height: '100%', position: 'absolute', top: 0, left: this.isLeft ?0 : '50%', /*backgroundColor: this.isLeft ? 'rgba(255,255,255,1)' : '#FF00ff' */}}
-				{...this._panResponder.panHandlers}
-			>
-  			<Body
-  				isStatic={true}
-  				label={ (this.isLeft ? 'LEFT' : 'RIGHT' ) + '_HAND'}
-          shape="rectangle"
-          mask="HAND"
-          args={[this.calculateInitLeft(), (TOP), HAND_WIDTH, HAND_HEIGHT ]}
-          density={0.003}
-          friction={0}
-          frictionStatic={0}
-          restitution={0}
-          ref={(b) => { 
-            if (!b) return;  
-            this.body = b; 
-            //console.log('AAA', b)  
-          }}
-          
-        >
-         	<View style={[styles.hand, this.getPositionStyles()]}  >
-            <Image
-              source={require('images/hand.png')}
-              style={styles.image}
-              resizeMode='contain'
-            />
-  				</View>
-        </Body>
-      </View>
+			<Body
+				isStatic={true}
+				label={ (this.isLeft ? 'LEFT' : 'RIGHT' ) + '_HAND'}
+        shape="rectangle"
+        mask="HAND"
+        args={[this.calculateInitLeft(), (TOP), HAND_WIDTH, HAND_HEIGHT ]}
+        density={0.003}
+        friction={0}
+        frictionStatic={0}
+        restitution={0}
+        ref={(b) => { 
+          if (!b) return;  
+          this.body = b; 
+          //console.log('AAA', b)  
+        }}
+      >
+       	<View style={[styles.hand, this.getPositionStyles()]}  >
+          <Image
+            source={require('images/hand.png')}
+            style={styles.image}
+            resizeMode='contain'
+          />
+				</View>
+      </Body>
 		)
 	}
 }
