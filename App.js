@@ -54,7 +54,7 @@ export default class Game extends Component {
   }
 
   componentWillMount() {
-   
+   this.initPanResponder();
    this.startInterval()
   }
 
@@ -76,9 +76,46 @@ export default class Game extends Component {
     clearInterval(this.inter);
   }
 
+  initPanResponder = () => {
+      this._panResponder = PanResponder.create({
+      onStartShouldSetPanResponder: (evt, gestureState) => true,
+      onStartShouldSetPanResponderCapture: (evt, gestureState) => true,
+      onMoveShouldSetPanResponder: (evt, gestureState) => true,
+      onMoveShouldSetPanResponderCapture: (evt, gestureState) => true,
+      onPanResponderGrant: (evt, gestureState) => {
+
+       //console.log('GRANT')
+        
+        //this.startForceIncrease();
+        
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        //console.log('MOVE', evt.nativeEvent.changedTouches)
+        this.setState({lastTouchEvents: evt.nativeEvent.changedTouches })
+      },
+      onPanResponderRelease: (evt, gestureState) => {
+
+
+        
+        //this.stopForceIncrease();
+
+        // Matter.Body.applyForce(this.body.body, {
+        //   x: this.body.body.position.x,
+        //   y: this.body.body.position.y,
+        // }, {
+        //   x: gestureState.vx,
+        //   y: gestureState.vy,
+        // });
+      },
+    });
+  }
+
   render() {
     const dimensions = Device;
     return (
+      <View 
+        {...this._panResponder.panHandlers}
+      >
       <ImageBackground 
         source={require('images/bg-stripes.png')} 
         style={{width: '100%', height: '100%'}} 
@@ -110,10 +147,10 @@ export default class Game extends Component {
               this.setState({collision})
             }}
             onUpdate={this.handleUpdate}
-            gravity={{ x: 0, y: 0.2, scale: 0.001 }}
+            gravity={{ x: 0, y: 1, scale: 0.001 }}
           >
-            <Hand type={0} collision={this.state.collision} world={this.engine && this.engine.world} />
-            <Hand type={1} collision={this.state.collision} world={this.engine && this.engine.world} />
+            <Hand type={0} collision={this.state.collision} lastTouchEvents={this.state.lastTouchEvents} />
+            <Hand type={1} collision={this.state.collision} lastTouchEvents={this.state.lastTouchEvents}  />
             {
               this.state.balls
             }
@@ -126,6 +163,7 @@ export default class Game extends Component {
        
       </Loop>
       </ImageBackground>
+      </View>
     );
   }
 }
